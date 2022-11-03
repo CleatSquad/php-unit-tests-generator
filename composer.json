@@ -1,0 +1,40 @@
+{
+    "name": "cleatsquad/php-unit-tests-generator",
+    "description": "PhpUnit test generator",
+    "require": {
+        "php": "~7.4||~8.0||~8.1",
+        "symfony/console": "~4.4.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9",
+        "phpstan/phpstan": "^0.12.68",
+        "friendsofphp/php-cs-fixer": "^2.18"
+    },
+    "version": "1.0.0",
+    "license": [
+        "MIT"
+    ],
+    "authors": [
+        {
+            "name": "Mohamed El Mrabet",
+            "homepage": "https://www.cleatsquad.com",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "files": [
+            "src/registration.php"
+        ],
+        "psr-4": {
+            "CleatSquad\\PhpUnitTestGenerator\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "classmap": [
+            "tests/cli/_steps"
+        ]
+    },
+    "scripts": {
+        "phpstan": "vendor/bin/phpstan analyse -l 6 src"
+    }
+}

@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- Preferences -->
+    <preference for="CleatSquad\PhpUnitTestGenerator\Api\GeneratorInterface" type="CleatSquad\PhpUnitTestGenerator\Model\Generator"/>
+    <!-- CLI -->
+    <type name="Magento\Framework\Console\CommandListInterface">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="php_unit_tests_generator" xsi:type="object">CleatSquad\PhpUnitTestGenerator\Console\Command\Generate</item>
+            </argument>
+        </arguments>
+    </type>
+    <virtualType name="CleatSquad\PhpUnitTestGenerator\VirtualType\Io" type="Magento\Framework\Code\Generator\Io">
+        <arguments>
+            <argument name="generationDirectory" xsi:type="string">app/code</argument>
+        </arguments>
+    </virtualType>
+    <type name="CleatSquad\PhpUnitTestGenerator\Model\UnitTestGenerator">
+        <arguments>
+            <argument name="ioObject" xsi:type="object">CleatSquad\PhpUnitTestGenerator\VirtualType\Io</argument>
+        </arguments>
+    </type>
+</config>

@@ -24,12 +24,12 @@ composer require cleatsquad/php-unit-tests-generator --dev
 You can use it to generate tests for all classes in a folder
 
 ```php
-bin/magento dev:tests:generate-unit /app/code/Vendor/Module/path
+bin/magento dev:unit:test-generate /app/code/Vendor/Module/pathtest-generate
 ```
 Or use it for a specified file
 
 ```php
-bin/magento dev:tests:generate-unit /app/code/Vendor/Module/path/to/file.php
+bin/magento dev:unit:test-generate /app/code/Vendor/Module/path/to/file.php
 ```
 ## Examples
 

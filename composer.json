@@ -9,7 +9,7 @@
         "phpunit/phpunit": "^9",
         "friendsofphp/php-cs-fixer": "^2.18"
     },
-    "version": "1.0.1",
+    "version": "1.0.2",
     "license": [
         "MIT"
     ],

@@ -10,8 +10,8 @@ namespace CleatSquad\PhpUnitTestGenerator\Model;
 
 use CleatSquad\PhpUnitTestGenerator\Api\GeneratorInterface;
 use Magento\Framework\Exception\FileSystemException;
-use Magento\Setup\Module\Di\Code\Reader\ClassesScanner;
-use Magento\Setup\Module\Di\Code\Reader\FileClassScanner;
+use Magento\Setup\Module\Di\Code\Reader\ClassesScanner\Proxy as ClassesScanner;
+use Magento\Setup\Module\Di\Code\Reader\FileClassScannerFactory;
 
 /**
  * Class Generator
@@ -21,14 +21,16 @@ class Generator implements GeneratorInterface
 {
     private array $excludePatterns = ["?Test/?"];
     private ClassesScanner $classesScanner;
+    private FileClassScannerFactory $fileClassScannerFactory;
 
     public function __construct(
         ClassesScanner $classesScanner,
+        FileClassScannerFactory $fileClassScannerFactory,
         UnitTestGeneratorFactory $unitTestGeneratorFactory,
         \CleatSquad\PhpUnitTestGenerator\Model\UnitTestGenerator\BlockFactory $unitTestGeneratorBlockFactory
     ) {
         $this->classesScanner = $classesScanner;
-        $this->unitTestGeneratorFactory = $unitTestGeneratorFactory;
+        $this->fileClassScannerFactory = $fileClassScannerFactory;
         $this->unitTestGeneratorFactory = $unitTestGeneratorFactory;
         $this->unitTestGeneratorBlockFactory = $unitTestGeneratorBlockFactory;
     }
@@ -92,7 +94,7 @@ class Generator implements GeneratorInterface
      */
     private function getClassName(string $fileItem)
     {
-        $fileScanner = new FileClassScanner($fileItem);
+        $fileScanner = $this->fileClassScannerFactory->create([$fileItem]);
         return $fileScanner->getClassName();
     }
 }

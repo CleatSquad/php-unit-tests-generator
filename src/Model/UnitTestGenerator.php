@@ -146,7 +146,7 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
     {
         $useValue = $useAlias ? $useAlias : $use;
         $useKeys = explode('\\', $useValue);
-        $useKey = last($useKeys);
+        $useKey = end($useKeys);
 
         if (in_array($useKey, $this->uses)) {
             if (count($useKeys) > 1) {

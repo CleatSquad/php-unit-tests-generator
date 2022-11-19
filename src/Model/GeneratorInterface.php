@@ -6,7 +6,7 @@
  */
 declare(strict_types=1);
 
-namespace CleatSquad\PhpUnitTestGenerator\Api;
+namespace CleatSquad\PhpUnitTestGenerator\Model;
 
 /**
  * Class GeneratorInterface
@@ -19,4 +19,9 @@ interface GeneratorInterface
      * @return mixed
      */
     public function generate(string $path);
+
+    /**
+     * @return array
+     */
+    public function getErrors(): array;
 }

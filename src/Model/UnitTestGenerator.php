@@ -9,6 +9,9 @@ declare(strict_types=1);
 namespace CleatSquad\PhpUnitTestGenerator\Model;
 
 
+use CleatSquad\PhpUnitTestGenerator\Exception\ClassNotCoveredByTestException;
+use CleatSquad\PhpUnitTestGenerator\Exception\ClassWithoutMethodsToTestException;
+
 /**
  * Class UnitTestGenerator
  * @package CleatSquad\PhpUnitTestGenerator\Model
@@ -24,6 +27,21 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
      * @var array
      */
     protected array $uses = [];
+
+    /**
+     * Validate data
+     *
+     * @return bool
+     */
+    protected function _validateData()
+    {
+        $classInfos = new \ReflectionClass($this->getSourceClassName());
+        if ($classInfos->getDocComment() && str_contains($classInfos->getDocComment(), '@codeCoverageIgnore')) {
+            throw new ClassNotCoveredByTestException(__('Class %1 is ignored from coverage', $this->getSourceClassName()));
+        }
+
+        return parent::_validateData();
+    }
 
     /**
      * Generate code
@@ -104,7 +122,6 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
                     )
                 ) . "\n";
         }
-
         return [
             'name' => 'setUp',
             'parameters' => [],
@@ -144,6 +161,9 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
      */
     public function addUse($use, $useAlias = null)
     {
+        if (isset($this->uses[$use])) {
+            return;
+        }
         $useValue = $useAlias ? $useAlias : $use;
         $useKeys = explode('\\', $useValue);
         $useKey = end($useKeys);
@@ -224,6 +244,9 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
      */
     protected function _getClassMethods()
     {
+        if (!count($this->getTestMethods())) {
+            throw new ClassWithoutMethodsToTestException(__('Class %1 does not contain any tested methods.', $this->getSourceClassName()));
+        }
         return array_merge(
             [$this->_getDefaultConstructorDefinition()],
             $this->getTestMethods()
@@ -240,6 +263,9 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
             $sourceReflectionClass = new \ReflectionClass($this->getSourceClassName());
             $publicMethods = $sourceReflectionClass->getMethods(\ReflectionMethod::IS_PUBLIC);
             foreach ($publicMethods as $method) {
+                if ($method->getDocComment() && str_contains($method->getDocComment(), '@codeCoverageIgnore')) {
+                    continue;
+                }
                 $declaringClass = '\\' . $method->getDeclaringClass()->getName();
                 if (!($method->isConstructor() ||
                         $method->isFinal() ||
@@ -270,7 +296,7 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
                                                 "\n\t->disableOriginalConstructor()" .
                                                 "\n\t->getMock();";
                                         } else {
-                                            return '$' . $argument->getName() . 'Mock =  null;';
+                                            return '$' . $argument->getName() . 'Mock = null;';
                                         };
                                     },
                                     $method->getParameters()
@@ -298,6 +324,7 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
                     ];
                 }
             }
+
         } catch (\ReflectionException $e) {
             return $methods;
         }

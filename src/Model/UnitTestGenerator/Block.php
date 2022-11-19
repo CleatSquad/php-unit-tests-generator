@@ -27,6 +27,9 @@ class Block extends UnitTestGenerator
             $sourceReflectionClass = new \ReflectionClass($this->getSourceClassName());
             $publicMethods = $sourceReflectionClass->getMethods(\ReflectionMethod::IS_PUBLIC);
             foreach ($publicMethods as $method) {
+                if ($method->getDocComment() && str_contains($method->getDocComment(), '@codeCoverageIgnore')) {
+                    continue;
+                }
                 $declaringClass = '\\' . $method->getDeclaringClass()->getName();
                 if (!($method->isConstructor() ||
                         $method->isFinal() ||

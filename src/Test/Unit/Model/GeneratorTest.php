@@ -45,9 +45,7 @@ class GeneratorTest extends \PHPUnit\Framework\TestCase
      */
     public function testGenerate(string $path, string $expected)
     {
-        dump($path);
         $result = $this->generator->generate($path);
-        dump($result);
         $this->assertEquals($expected, $result);
     }
 }

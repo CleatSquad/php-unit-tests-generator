@@ -8,7 +8,8 @@ declare(strict_types=1);
 
 namespace CleatSquad\PhpUnitTestGenerator\Console\Command;
 
-use CleatSquad\PhpUnitTestGenerator\Api\GeneratorInterface;
+use CleatSquad\PhpUnitTestGenerator\Model\GeneratorInterface;
+use CleatSquad\PhpUnitTestGenerator\Exception\ClassIgnoredFromCoverageException;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -60,12 +61,19 @@ class Generate extends \Symfony\Component\Console\Command\Command
     {
         try {
             $path = $input->getArgument(static::ARGUMENT_PATH);
-            $result = $this->generator->generate($path);
-            if ($result) {
-                $output->writeln('<info>The php unit test is successfully generated.</info>');
-                $output->writeln("<info>$result</info>");
+            $results = $this->generator->generate($path);
+            if (count($results)) {
+                $output->writeln('<info>The php unit test is generated successfully, for the following classes:</info>');
+                foreach ($results as $result) {
+                    $output->writeln("<info>$result</info>");
+                }
             } else {
                 $output->writeln('<info>There is no generated php unit test.</info>');
+            }
+            if ($this->generator->getErrors()) {
+                foreach ($this->generator->getErrors() as $error) {
+                    $output->writeln('<error>' . $error . '</error>');
+                }
             }
         } catch (\Exception $e) {
             $output->writeln('<error>' . $e->getMessage() . '</error>');

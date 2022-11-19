@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace CleatSquad\PhpUnitTestGenerator\Model;
 
-use CleatSquad\PhpUnitTestGenerator\Api\GeneratorInterface;
+use CleatSquad\PhpUnitTestGenerator\Model\GeneratorInterface;
 use Magento\Framework\Exception\FileSystemException;
 use Magento\Setup\Module\Di\Code\Reader\FileClassScanner;
 

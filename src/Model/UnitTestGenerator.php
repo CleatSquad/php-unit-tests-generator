@@ -8,15 +8,19 @@ declare(strict_types=1);
 
 namespace CleatSquad\PhpUnitTestGenerator\Model;
 
-
 use CleatSquad\PhpUnitTestGenerator\Exception\ClassNotCoveredByTestException;
 use CleatSquad\PhpUnitTestGenerator\Exception\ClassWithoutMethodsToTestException;
+use Magento\Framework\Code\Generator\EntityAbstract;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use ReflectionException;
+use ReflectionParameter;
 
 /**
  * Class UnitTestGenerator
  * @package CleatSquad\PhpUnitTestGenerator\Model
  */
-class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
+class UnitTestGenerator extends EntityAbstract
 {
     /**
      * @var array|null
@@ -32,8 +36,10 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
      * Validate data
      *
      * @return bool
+     * @throws ClassNotCoveredByTestException
+     * @throws ReflectionException
      */
-    protected function _validateData()
+    protected function _validateData(): bool
     {
         $classInfos = new \ReflectionClass($this->getSourceClassName());
         if ($classInfos->getDocComment() && str_contains($classInfos->getDocComment(), '@codeCoverageIgnore')) {
@@ -48,7 +54,7 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
      *
      * @return string
      */
-    protected function _generateCode()
+    protected function _generateCode(): string
     {
         $this->addClassExtends();
         return str_replace(" = null;", ";", parent::_generateCode());
@@ -59,14 +65,14 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
      *
      * @return array
      */
-    protected function _getDefaultConstructorDefinition()
+    protected function _getDefaultConstructorDefinition(): array
     {
-        $beforepParams = $constructorParams = '';
+        $beforeParams = $constructorParams = '';
         if (count($this->getConstructorArgumentsClass())) {
-            $beforepParams = "\t" . \implode(
+            $beforeParams = "\t" . \implode(
                     "\n",
                     \array_map(
-                        function (\ReflectionParameter $argument) {
+                        function (ReflectionParameter $argument) {
                             $type = $argument->getType();
                             $alias = $this->uses[$type->getName()];
                             $factoryInstance = $createFactory = '';
@@ -75,7 +81,6 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
                                 $class = \substr($type->getName(), 0, -7);
                                 $argumentName = \substr($argument->getName(), 0, -7) . 'Instance';
                                 try {
-                                    $classInstance =  new \ReflectionClass($class);
                                     $this->addUse($class);
                                     $aliasInstance = $this->uses[$class];
                                     $factoryInstance =
@@ -115,7 +120,7 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
             $constructorParams = "\n\t" . \implode(
                     ',' . "\n\t",
                     \array_map(
-                        function (\ReflectionParameter $argument) {
+                        function (ReflectionParameter $argument) {
                             return '$this->' . $argument->getName() . 'Mock';
                         },
                         $this->getConstructorArgumentsClass()
@@ -128,7 +133,7 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
             'body' =>
                 sprintf(
                     '%s$this->%s = new %s(%s);',
-                    $beforepParams,
+                    $beforeParams,
                     lcfirst($this->getSourceClassNameWithoutNamespace()),
                     $this->getSourceClassNameWithoutNamespace(),
                     $constructorParams
@@ -148,18 +153,18 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
     private function addClassExtends()
     {
         $this->addUse(
-            \PHPUnit\Framework\TestCase::class
+            TestCase::class
         );
-        $this->_classGenerator->setExtendedClass(\PHPUnit\Framework\TestCase::class);
+        $this->_classGenerator->setExtendedClass(TestCase::class);
     }
 
     /**
      * Add a class to "use" classes
      *
-     * @param  string $use
-     * @param  string|null $useAlias
+     * @param string $use
+     * @param string|null $useAlias
      */
-    public function addUse($use, $useAlias = null)
+    private function addUse(string $use, string $useAlias = null)
     {
         if (isset($this->uses[$use])) {
             return;
@@ -190,15 +195,15 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
      *
      * @return array
      */
-    protected function _getClassProperties()
+    protected function _getClassProperties(): array
     {
         $properties = [];
         if (count($this->getConstructorArgumentsClass())) {
             $this->addUse(
-                \PHPUnit\Framework\MockObject\MockObject::class
+                MockObject::class
             );
             $properties = \array_map(
-                function(\ReflectionParameter $argument) {
+                function(ReflectionParameter $argument) {
                     $type = $argument->getType();
                     $this->addUse($type->getName());
                     $alias = $this->uses[$type->getName()];
@@ -241,8 +246,9 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
      * Returns list of methods for class generator
      *
      * @return array
+     * @throws ClassWithoutMethodsToTestException
      */
-    protected function _getClassMethods()
+    protected function _getClassMethods(): array
     {
         if (!count($this->getTestMethods())) {
             throw new ClassWithoutMethodsToTestException(__('Class %1 does not contain any tested methods.', $this->getSourceClassName()));
@@ -254,11 +260,11 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
     }
 
     /**
+     * @param array $methods
      * @return array
      */
-    protected function getTestMethods(): array
+    protected function getTestMethods(array $methods = []): array
     {
-        $methods = [];
         try {
             $sourceReflectionClass = new \ReflectionClass($this->getSourceClassName());
             $publicMethods = $sourceReflectionClass->getMethods(\ReflectionMethod::IS_PUBLIC);
@@ -283,7 +289,7 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
                             \implode(
                                 "\n",
                                 \array_map(
-                                    function (\ReflectionParameter $argument) {
+                                    function (ReflectionParameter $argument) {
                                         if ($argument->getType() && !$argument->getType()->isBuiltin()) {
                                             $type = $argument->getType();
                                             $this->addUse($type->getName());
@@ -308,7 +314,7 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
                             \implode(
                                 ', ',
                                 \array_map(
-                                    function (\ReflectionParameter $argument) {
+                                    function (ReflectionParameter $argument) {
                                         return '$' . $argument->getName() . 'Mock';
                                     },
                                     $method->getParameters()
@@ -325,7 +331,7 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
                 }
             }
 
-        } catch (\ReflectionException $e) {
+        } catch (ReflectionException $e) {
             return $methods;
         }
 
@@ -340,14 +346,14 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
        if ($this->constructorArguments === null) {
             try {
                 $constructor = new \ReflectionMethod($this->getSourceClassName(), '__construct');
-                /** @var \ReflectionParameter  $constructorArgument */
+                /** @var ReflectionParameter  $constructorArgument */
                 $this->constructorArguments = array_filter(
                     $constructor->getParameters(),
-                    function(\ReflectionParameter $argument) {
+                    function(ReflectionParameter $argument) {
                         return !$argument->isOptional() && $argument->getType() && !$argument->getType()->isBuiltin();
                     }
                 );
-            } catch (\ReflectionException $e) {
+            } catch (ReflectionException $e) {
                 $this->constructorArguments = [];
             }
         }
@@ -360,7 +366,7 @@ class UnitTestGenerator extends \Magento\Framework\Code\Generator\EntityAbstract
      *
      * @return array
      */
-    protected function _getClassDocBlock()
+    protected function _getClassDocBlock(): array
     {
         $description = '@covers ' . $this->getSourceClassName();
         return ['shortDescription' => $description];

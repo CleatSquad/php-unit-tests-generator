@@ -35,11 +35,6 @@ bin/magento dev:unit:test-generate /app/code/Vendor/Module/path/to/file.php
 
 @todo add origin class and generated test
 
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/cleatsquad/php-unit-tests-generator/tags). 
-
 ## Authors
 
 * **Mohamed El Mrabet** - *Initial work* - [mimou78](https://github.com/mimou78)

@@ -18,11 +18,11 @@ class Block extends UnitTestGenerator
 {
 
     /**
+     * @param array $methods
      * @return array
      */
-    protected function getTestMethods(): array
+    protected function getTestMethods(array $methods = []): array
     {
-        $methods = [];
         try {
             $sourceReflectionClass = new \ReflectionClass($this->getSourceClassName());
             $publicMethods = $sourceReflectionClass->getMethods(\ReflectionMethod::IS_PUBLIC);

@@ -10,6 +10,8 @@ namespace CleatSquad\PhpUnitTestGenerator\Console\Command;
 
 use CleatSquad\PhpUnitTestGenerator\Model\GeneratorInterface;
 use CleatSquad\PhpUnitTestGenerator\Exception\ClassIgnoredFromCoverageException;
+use Magento\Framework\Console\Cli;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -18,15 +20,15 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Class Generate
  * @package CleatSquad\PhpUnitTestGenerator\Console\Command
  */
-class Generate extends \Symfony\Component\Console\Command\Command
+class Generate extends Command
 {
     const ARGUMENT_PATH = 'filepath';
     const CONSOLE_COMMAND_NAME = 'dev:unit:test-generate';
-
     private GeneratorInterface $generator;
 
     /**
      * @param GeneratorInterface $generator
+     * @param string|null $name
      */
     public function __construct(
         GeneratorInterface $generator,
@@ -57,7 +59,7 @@ class Generate extends \Symfony\Component\Console\Command\Command
      *
      * @return int|null
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): ?int
     {
         try {
             $path = $input->getArgument(static::ARGUMENT_PATH);
@@ -77,9 +79,9 @@ class Generate extends \Symfony\Component\Console\Command\Command
             }
         } catch (\Exception $e) {
             $output->writeln('<error>' . $e->getMessage() . '</error>');
-            return \Magento\Framework\Console\Cli::RETURN_FAILURE;
+            return Cli::RETURN_FAILURE;
         }
 
-        return \Magento\Framework\Console\Cli::RETURN_SUCCESS;
+        return Cli::RETURN_SUCCESS;
     }
 }

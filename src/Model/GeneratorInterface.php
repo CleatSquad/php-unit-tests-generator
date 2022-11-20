@@ -8,6 +8,8 @@ declare(strict_types=1);
 
 namespace CleatSquad\PhpUnitTestGenerator\Model;
 
+use Magento\Framework\Exception\FileSystemException;
+
 /**
  * Class GeneratorInterface
  * @package CleatSquad\PhpUnitTestGenerator\Api
@@ -16,9 +18,11 @@ interface GeneratorInterface
 {
     /**
      * @param string $path
-     * @return mixed
+     * @return array
+     * @throws FileSystemException
+     * @throws ReflectionException
      */
-    public function generate(string $path);
+    public function generate(string $path): array;
 
     /**
      * @return array

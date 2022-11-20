@@ -8,11 +8,15 @@ declare(strict_types=1);
 
 namespace CleatSquad\PhpUnitTestGenerator\Model;
 
-use CleatSquad\PhpUnitTestGenerator\Model\GeneratorInterface;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\FileSystemException;
+use Magento\Framework\View\Element\Template;
 use Magento\Setup\Module\Di\Code\Reader\ClassesScanner\Proxy as ClassesScanner;
 use Magento\Setup\Module\Di\Code\Reader\FileClassScannerFactory;
+use ReflectionClass;
+use ReflectionException;
+use SplFileInfo;
+use Symfony\Component\Console\Command\Command;
 
 /**
  * Class Generator
@@ -30,6 +34,7 @@ class Generator implements GeneratorInterface
         FileClassScannerFactory $fileClassScannerFactory,
         UnitTestGeneratorFactory $unitTestGeneratorFactory,
         \CleatSquad\PhpUnitTestGenerator\Model\UnitTestGenerator\BlockFactory $unitTestGeneratorBlockFactory,
+        \CleatSquad\PhpUnitTestGenerator\Model\UnitTestGenerator\ConsoleCommandFactory $unitTestGeneratorConsoleCommandFactory,
         \CleatSquad\PhpUnitTestGenerator\Model\UnitTestGenerator\RepositoryFactory $unitTestGeneratorRepositoryFactory,
         \CleatSquad\PhpUnitTestGenerator\Model\UnitTestGenerator\ObserverFactory $unitTestGeneratorObserverFactory
     ) {
@@ -37,45 +42,44 @@ class Generator implements GeneratorInterface
         $this->fileClassScannerFactory = $fileClassScannerFactory;
         $this->unitTestGeneratorFactory = $unitTestGeneratorFactory;
         $this->unitTestGeneratorBlockFactory = $unitTestGeneratorBlockFactory;
+        $this->unitTestGeneratorConsoleCommandFactory = $unitTestGeneratorConsoleCommandFactory;
         $this->unitTestGeneratorRepositoryFactory = $unitTestGeneratorRepositoryFactory;
         $this->unitTestGeneratorObserverFactory = $unitTestGeneratorObserverFactory;
     }
 
     /**
      * @param string $path
-     * @return mixed|void
+     * @return array
+     * @throws FileSystemException
+     * @throws ReflectionException
      */
-    public function generate(string $path)
+    public function generate(string $path): array
     {
         $resultClasses = [];
         foreach ($this->loadClasses($path) as $sourceClass) {
-            $resultClass = \explode('\\', trim($sourceClass, '\\'));
-            \array_splice($resultClass, 2, 0, 'Test\\Unit');
-            $resultClass = \implode('\\', $resultClass) . 'Test';
+            $resultClass = $this->getResultClass($sourceClass);
             if (class_exists($resultClass)) {
-                $this->addError('Unit test for ' . $sourceClass . ' is already genearted.');
+                $this->addError('Unit test for ' . $sourceClass . ' is already generated.');
                 continue;
             }
-            /**
-             * elseif (str_contains(strtolower($sourceClass), 'repository')) {
-            $generator = $this->unitTestGeneratorRepositoryFactory->create([
-            'sourceClassName' => $sourceClass,
-            'resultClassName' => $resultClass,
-            ]);
-            }
-             */
-            $class = new \ReflectionClass($sourceClass);
-            if ($class->isSubclassOf(\Magento\Framework\View\Element\Template::class)) {
+            $generator = null;
+            $class = new ReflectionClass($sourceClass);
+            if ($class->isSubclassOf(Template::class)) {
                 $generator = $this->unitTestGeneratorBlockFactory->create([
                     'sourceClassName' => $sourceClass,
                     'resultClassName' => $resultClass,
                 ]);
-            }  if ($class->isSubclassOf(ObserverInterface::class)) {
+            } elseif ($class->isSubclassOf(Command::class)) {
+                $generator = $this->unitTestGeneratorConsoleCommandFactory->create([
+                    'sourceClassName' => $sourceClass,
+                    'resultClassName' => $resultClass,
+                ]);
+            } elseif ($class->isSubclassOf(ObserverInterface::class)) {
                 $generator = $this->unitTestGeneratorObserverFactory->create([
                     'sourceClassName' => $sourceClass,
                     'resultClassName' => $resultClass,
                 ]);
-            }  else {
+            } else {
                 $generator = $this->unitTestGeneratorFactory->create([
                     'sourceClassName' => $sourceClass,
                     'resultClassName' => $resultClass
@@ -114,19 +118,14 @@ class Generator implements GeneratorInterface
      */
     private function loadClasses(string $path) : array
     {
-        $classes = [];
-        $fileinfo = new \SplFileInfo($path);
+        $fileInfo = new SplFileInfo($path);
         $this->classesScanner->addExcludePatterns($this->excludePatterns);
-
-        if ($fileinfo->isFile()) {
-            $classes = [$this->getClassName($fileinfo->getRealPath())];
-            $recursiveIterator[] = $fileinfo;
-        } elseif ($fileinfo->isDir()) {
+        if ($fileInfo->isFile()) {
+            $classes = [$this->getClassName($fileInfo->getRealPath())];
+        } elseif ($fileInfo->isDir()) {
             $classes = $this->classesScanner->getList($path);
         } else {
-            throw new FileSystemException(
-                new \Magento\Framework\Phrase('The "%1" path is invalid. Verify the path and try again.', [$path])
-            );
+            throw new FileSystemException(__('The "%1" path is invalid. Verify the path and try again.', [$path]));
         }
         return $classes;
     }
@@ -135,9 +134,20 @@ class Generator implements GeneratorInterface
      * @param string $fileItem
      * @return string
      */
-    private function getClassName(string $fileItem)
+    private function getClassName(string $fileItem): string
     {
         $fileScanner = $this->fileClassScannerFactory->create([$fileItem]);
         return $fileScanner->getClassName();
+    }
+
+    /**
+     * @param $className
+     * @return string
+     */
+    protected function getResultClass($className): string
+    {
+        $resultClass = \explode('\\', trim($className, '\\'));
+        \array_splice($resultClass, 2, 0, 'Test\\Unit');
+        return \implode('\\', $resultClass) . 'Test';
     }
 }

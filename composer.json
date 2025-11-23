@@ -3,7 +3,7 @@
     "description": "PhpUnit test generator",
     "require": {
         "php": "~7.4||~8.0||~8.1",
-        "symfony/console": "~4.4.0"
+        "symfony/console": "~7.3.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^9",
